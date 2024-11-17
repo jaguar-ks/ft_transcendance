@@ -2,6 +2,8 @@ images=$(shell docker image ls -aq)
 
 elk_net=$(shell docker network ls -qf name="elk_net")
 
+volumes=$(shell docker volume ls -q)
+
 all: build
 
 create_net:
@@ -33,9 +35,14 @@ delete_images:
 		echo "No images to delete";\
 	fi
 
-fclean: down ELK_down delete_images
+delete_volumes:
+	if [ -n "$(volumes)" ]; then\
+		docker volume rm $(volumes);\
+	fi
+
+fclean: down ELK_down delete_images delete_volumes
 	docker system prune -a --force
 
 .PHONY: all build up down delete_images fclean ELK ELK_down create_net
 
-.SILENT: all build up down delete_images fclean create_net ELK ELK_down
+.SILENT: all build up down delete_images fclean create_net ELK ELK_down delete_volumes
