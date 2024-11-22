@@ -1,0 +1,19 @@
+
+services:
+  vault:
+    image: hashicorp/vault:1.18
+    container_name: vault
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - vault_net
+      - elk_net
+
+networks:
+  vault_net:
+    name: vault_net
+  elk_net:
+    external: true
+    name: elk_net

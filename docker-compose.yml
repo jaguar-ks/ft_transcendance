@@ -11,6 +11,7 @@ services:
         # entrypoint: ["/docker-entrypoint-initdb.d/dump_logs.sh"]
         networks:
             - transcendance_net
+            - elk_net
         restart: always
         env_file:
             - .env.example
@@ -25,7 +26,7 @@ services:
             - ./srcs/api/:/var/www/
         networks:
             - transcendance_net
-            - elk_net
+            # - elk_net
         ports:
             - 8000:8000
         depends_on:
