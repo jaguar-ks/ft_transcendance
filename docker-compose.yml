@@ -16,7 +16,23 @@ services:
         env_file:
             - .env.example
 
-
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./srcs/nginx/tools/generate_certs.sh:/usr/local/bin/generate_certs.sh:ro
+            - ./srcs/nginx/certs:/etc/nginx/certs
+            - ./srcs/nginx/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
+        command: "/bin/bash /usr/local/bin/generate_certs.sh"
+        networks:
+            - transcendance_net
+        depends_on:
+            - backend
+            - frontend
+    
     backend:
         image: django:trns
         container_name: backend
@@ -44,7 +60,7 @@ services:
 
     frontend:
         build: ./srcs/frontend
-        container_name: nextJs
+        container_name: frontend
         ports:
             - "3000:3000"  # Map host port 3000 to container port 3000
         volumes:
