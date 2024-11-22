@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 CERT_DIR="/etc/nginx/certs"
 CERT_KEY="$CERT_DIR/nginx.key"
