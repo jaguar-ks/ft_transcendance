@@ -30,7 +30,7 @@ ELK_down:
 
 delete_images:
 	if [ -n "$(images)" ];\
-		then docker rmi $(images);\
+		then docker rmi -f $(images);\
 	else\
 		echo "No images to delete";\
 	fi
@@ -41,6 +41,7 @@ delete_volumes:
 	fi
 
 fclean: down ELK_down delete_images delete_volumes
+	rm -rf ELK/postgres/logs/*; \
 	docker system prune -a --force
 
 .PHONY: all build up down delete_images fclean ELK ELK_down create_net
