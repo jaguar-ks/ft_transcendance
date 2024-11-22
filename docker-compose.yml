@@ -17,7 +17,7 @@ services:
             - .env.example
 
     nginx:
-        image: nginx:latest
+        image: owasp/modsecurity:nginx-alpine
         container_name: nginx
         ports:
             - "80:80"
@@ -26,7 +26,8 @@ services:
             - ./srcs/nginx/tools/generate_certs.sh:/usr/local/bin/generate_certs.sh:ro
             - ./srcs/nginx/certs:/etc/nginx/certs
             - ./srcs/nginx/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
-        command: "/bin/bash /usr/local/bin/generate_certs.sh"
+            - ./srcs/nginx/modsecurity/modsecurity.conf:/etc/modsecurity.d/modsecurity.conf
+        command: "/bin/sh /usr/local/bin/generate_certs.sh"
         networks:
             - transcendance_net
         depends_on:
