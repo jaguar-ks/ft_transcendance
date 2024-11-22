@@ -13,4 +13,4 @@ sed -i "s|#log_filename = 'postgresql.log'|log_filename = 'postgresql.log'|" "$C
 mkdir -p /var/log/postgresql
 chmod 777 /var/log/postgresql
 
-exec docekr-entrypoint.sh "$@"
+exec docker-entrypoint.sh "$@"
