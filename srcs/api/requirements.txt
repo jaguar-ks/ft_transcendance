@@ -62,8 +62,3 @@ requests==2.32.3
 six==1.16.0
 python-dateutil==2.9.0.post0
 python-json-logger==2.0.7
-# logstash==0.1.dev0
-wheel==0.44.0
-wrapt==1.16.0
-setuptools==75.2.0
-logstash_formatter==0.5.17
