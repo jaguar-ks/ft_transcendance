@@ -43,3 +43,5 @@ htmlcov/
 **/migrations/*
 !**/migrations/__init__.py
 *todo*
+*.key
+*.crt
