@@ -1,7 +1,0 @@
-server.host: "0.0.0.0"
-elasticsearch.hosts: ["http://elasticsearch:9200"]
-elasticsearch.username: "kibana_system"
-elasticsearch.password: "lil123"
-elasticsearch.ssl.verificationMode: none
-xpack.security.enabled: true
-xpack.reporting.roles.enabled: false
