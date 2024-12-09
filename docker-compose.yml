@@ -8,9 +8,12 @@ services:
             - postgres_data:/var/lib/postgresql/data/
         networks:
             - transcendance_net
-        env_file:
-            - .env.example
         restart: always
+        environment:
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+
 
     backend:
         image: django:trns
@@ -18,36 +21,107 @@ services:
         build:
             context: ./srcs/api/
         volumes:
-            - ./srcs/api/:/var/www/
+            - backend_files:/var/www/
         networks:
             - transcendance_net
-            - elk_net
         ports:
             - 8000:8000
         depends_on:
             - pgdb
-        env_file:
-            - .env.example
         restart: on-failure
-        # environment:
-        #     DEBUG: True # ['True', 'False']
-        #     DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-        #     DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
-        #     DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
-        #     DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
+        environment:
+            DEBUG: True # ['True', 'False']
+            DJANGO_SETTING_MODULE: config.django.local
+            DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DB}
+            DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
+            DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
+            DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
+            DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+    
+    elasticsearch:
+        container_name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.10.1
+        environment:
+            - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+            - KIBANA_SYSTEM_PASSWORD=${KIBANA_PASSWORD}
+            - discovery.type=single-node
+            - xpack.security.enabled=true
+            - ELASTIC_USERNAME=elastic
+        healthcheck:
+            test: ["CMD-SHELL", "curl -s -u elastic:lol123 http://localhost:9200/_cat/health >/dev/null || exit 1"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+            start_period: 60s
+        volumes:
+            - ./srcs/ELK/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+            - es_data:/usr/share/elasticsearch/data
+        ports:
+            - "9200:9200"
+            - "9300:9300"
+        networks:
+            - elk
+        restart: always
 
+    setup_kibana:
+        image: curlimages/curl:latest
+        volumes:
+            - ./srcs/ELK/tools/init-kibana.sh:/init-kibana.sh
+        command: ["sh", "/init-kibana.sh"]
+        networks:
+            - elk
+        env_file:
+            - .env
+        depends_on:
+            elasticsearch:
+                condition: service_healthy
+    
+    logstash:
+        container_name: logstash
+        image: docker.elastic.co/logstash/logstash:8.10.1
+        volumes:
+            - ./srcs/ELK/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+            - ./srcs/ELK/logstash/pipeline:/usr/share/logstash/pipeline
+        ports:
+            - "50000:50000"
+            - "9600:9600"
+        env_file:
+        - .env
+        environment:
+            - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+            - ELASTICSEARCH_USERNAME=elastic
+            - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+            - LS_JAVA_OPTS=-Xms256m -Xmx256m
+        networks:
+            - elk
+        depends_on:
+            elasticsearch:
+                condition: service_healthy
+
+    kibana:
+        container_name: kibana
+        image: docker.elastic.co/kibana/kibana:8.10.1
+        depends_on:
+            setup_kibana:
+                condition: service_completed_successfully
+        environment:
+            - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+            - ELASTICSEARCH_USERNAME=kibana_system
+            - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+            - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
+        volumes:
+            - ./srcs/ELK/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+        ports:
+            - "5601:5601"
+        networks:
+            - elk 
 
 volumes:
     postgres_data:
     backend_files:
-    #     driver: local
-    #     driver_opts:
-    #         type: none
-    #         o: bind
-    #         device: /Users/zel-bouz/transcendance/srcs/api
+    es_data:
+        driver: local
 
 networks:
     transcendance_net:
-    elk_net:
-        external: true
-        name: elk_net
+    elk:
